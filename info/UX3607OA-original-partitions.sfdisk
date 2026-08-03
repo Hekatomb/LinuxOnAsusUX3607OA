@@ -1,0 +1,24 @@
+label: gpt
+label-id: B97B9116-E98B-416C-B367-23625BD8FF01
+device: /dev/sda
+unit: sectors
+first-lba: 34
+last-lba: 2000409230
+sector-size: 512
+
+/dev/sda1 : start=        2048, size=        2048, type=97745ABA-135A-44C3-9ADC-05616173C24C, uuid=61C9E7D5-F164-464B-8DA3-03A935BEA0A0, name="ToolsFv", attrs="RequiredPartition GUID:63"
+/dev/sda2 : start=        4096, size=       32768, type=BC0330EB-3410-4951-A617-03898DBE3372, uuid=1293EB72-6044-4271-A062-AB7362EEA1E3, name="LogFs", attrs="RequiredPartition GUID:63"
+/dev/sda3 : start=       36864, size=        2048, type=B7524B2D-0A91-49A2-AA5E-BDA266699D49, uuid=56F8F8E9-9178-49B7-8F22-BF3C53F18BDF, name="EnterpriseFV", attrs="RequiredPartition GUID:63"
+/dev/sda4 : start=       38912, size=        2048, type=A3381699-350C-465E-BD5D-FA3AB901A39A, uuid=F68F3617-1A8D-4EA0-8BC1-FEB0C4EBE2B6, name="ToolsFv_BACKUP", attrs="RequiredPartition GUID:63"
+/dev/sda5 : start=       40960, size=      143360, type=C80325BA-7EC2-4A30-B2F7-18F646086185, uuid=3620C134-59C4-4162-86D9-9FDB5389AE1E, name="UpdateCapsule", attrs="RequiredPartition GUID:63"
+/dev/sda6 : start=      184320, size=      245760, type=FA4CBE53-31B5-4C23-9C1E-A01FEB966856, uuid=66CD8D81-81A7-4C92-9647-B8264B4FE7B7, name="NHLOS", attrs="RequiredPartition GUID:63"
+/dev/sda7 : start=      430080, size=      245760, type=6690B4CE-70E9-4817-B9F1-25D64D888357, uuid=D3226F83-C55E-48DA-A62A-75AF5B7CA483, name="core_nhlos_a", attrs="RequiredPartition GUID:63"
+/dev/sda8 : start=      675840, size=        2048, type=AA9A5C4C-4F1F-7D3A-014A-22BD33BF7191, uuid=95A3E160-E1F6-4A46-93F1-C2163CF91650, name="quantumsdk", attrs="RequiredPartition GUID:63"
+/dev/sda9 : start=      677888, size=        2048, type=80C23C26-C3F9-4A19-BB38-1E457DACEB09, uuid=560AA3E6-384E-4A2E-BFE7-962870707375, name="quantumfv", attrs="RequiredPartition GUID:63"
+/dev/sda10 : start=      679936, size=        2048, type=E12D830B-7F62-4F0B-B48A-8178C5BF3AC1, uuid=FD092425-A825-4825-ADC3-6C1BC399D21E, name="catecontentfv", attrs="RequiredPartition GUID:63"
+/dev/sda11 : start=      681984, size=     1048576, type=5AF80809-AABB-4943-9168-CDFC38742598, uuid=23220D25-D763-4B70-BD47-E141E34EEE53, name="logdump", attrs="RequiredPartition GUID:63"
+/dev/sda12 : start=     1730560, size=      921600, type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B, uuid=E197AEE8-4FE1-4B29-8031-B7C8A3AF9173, name="EFI system partition"
+/dev/sda13 : start=     2652160, size=       32768, type=E3C9E316-0B5C-4DB8-817D-F92DF00215AE, uuid=86819422-2483-4020-B065-1C165E62C3A9, name="Microsoft reserved partition"
+/dev/sda14 : start=     2684928, size=  1993810575, type=EBD0A0A2-B9E5-4433-87C0-68B6B72699C7, uuid=4E7FFCED-29A8-468A-9CE6-88448E005D00, name="Basic data partition"
+/dev/sda15 : start=  1996496896, size=     3379200, type=DE94BBA4-06D1-4D40-A16A-BFD50179D6AC, uuid=CAB7A22B-3DD7-46BC-96F0-11B949E552F8, name="Basic data partition", attrs="RequiredPartition GUID:63"
+/dev/sda16 : start=  1999876096, size=      532480, type=DE94BBA4-06D1-4D40-A16A-BFD50179D6AC, uuid=E3DD26AE-534C-4F21-9D3E-B4127186EDD3, name="Basic data partition", attrs="RequiredPartition GUID:63"
