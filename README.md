@@ -2,7 +2,7 @@
 Notes about trying to run Linux on the Asus Zenbook A16. Note this is not something any sane person should do.
 
 ## Kernel
-Linux-next-20260803 works but screen remains black.
+Linux-next-20260803 kinda works but screen remains black.
 Apply patch from msg fc3d0dfc-20cb-4289-a0dd-67ace50d42d8 {at} oss.qualcomm.com from the LKML to get the screen
 working.
 
@@ -37,15 +37,7 @@ Information about the card taken from dmesg on a running system:.
     bus=pci,vendor=17cb,device=1112,subsystem-vendor=105b,subsystem-device=e14f,qmi-chip-id=33,qmi-board-id=255,variant=UX3407Q 
     from ath12k/QCC2072/hw1.0/board-2.bin
 
-
-## Kernel
-Base: Linux next kernel as of 2026-0802 (tag: linux-next-20260631) with the patches in the *patches* folder.
-- patches/LKML folder: patches taken the Kernels mailing list
-- patches/self folder: Small changes I have made. Note the forcus is just to get things to work. Not solving the real issues.
-Kernel boot parameters used: 
-    CMDLINE='root=PARTUUID=************* rw clk_ignore_unused pd_ignore_unused'
-
-
 ## Problems and thing that is not working
 
-Oh boy. Screen not showing anything unless I hard code the data rate for the eDP to 810000 (see *patches/self*)
+Oh boy. Screen not showing anything for a long time during boot. 
+
