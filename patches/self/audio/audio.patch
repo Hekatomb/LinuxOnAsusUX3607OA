@@ -1,0 +1,64 @@
+diff --git a/drivers/soundwire/qcom.c b/drivers/soundwire/qcom.c
+index 55678a30cd4a..fc04a5abd9fc 100644
+--- a/drivers/soundwire/qcom.c
++++ b/drivers/soundwire/qcom.c
+@@ -1694,6 +1694,11 @@ static int qcom_swrm_probe(struct platform_device *pdev)
+        pm_runtime_mark_last_busy(dev);
+        pm_runtime_set_active(dev);
+        pm_runtime_enable(dev);
++       /*
++       * Diagnostic: keep the SoundWire controller runtime-active to test
++        * whether clock-stop/resume corrupts slave enumeration.
++        */
++       pm_runtime_forbid(dev);
+ 
+ #ifdef CONFIG_DEBUG_FS
+        ctrl->debugfs = debugfs_create_dir("qualcomm-sdw", ctrl->bus.debugfs);
+diff --git a/sound/soc/codecs/lpass-wsa-macro.c b/sound/soc/codecs/lpass-wsa-macro.c
+index cfd2ac0a6cda..9d56c3014f67 100644
+--- a/sound/soc/codecs/lpass-wsa-macro.c
++++ b/sound/soc/codecs/lpass-wsa-macro.c
+@@ -1109,7 +1109,7 @@ static const struct regmap_config wsa_regmap_config = {
+        .reg_bits = 16,
+        .val_bits = 32, /* 8 but with 32 bit read/write */
+        .reg_stride = 4,
+-       .cache_type = REGCACHE_FLAT,
++       .cache_type = REGCACHE_FLAT_S,
+        /* .reg_defaults and .num_reg_defaults set in probe() */
+        .max_register = WSA_MAX_OFFSET,
+        .writeable_reg = wsa_is_writeable_register,
+@@ -1129,23 +1129,30 @@ static const struct regmap_config wsa_regmap_config = {
+ int wsa_macro_set_spkr_mode(struct snd_soc_component *component, int mode)
+ {
+        struct wsa_macro *wsa = snd_soc_component_get_drvdata(component);
++       unsigned int comp1_ctl3;
++       unsigned int comp1_ctl7;
+ 
+        wsa->spkr_mode = mode;
+ 
++       comp1_ctl3 = CDC_WSA_COMPANDER0_CTL3 +
++                   wsa->reg_layout->compander1_reg_offset;
++       comp1_ctl7 = CDC_WSA_COMPANDER0_CTL7 +
++                   wsa->reg_layout->compander1_reg_offset;
++
+        switch (mode) {
+        case WSA_MACRO_SPKR_MODE_1:
+                snd_soc_component_update_bits(component, CDC_WSA_COMPANDER0_CTL3, 0x80, 0x00);
+-               snd_soc_component_update_bits(component, CDC_WSA_COMPANDER1_CTL3, 0x80, 0x00);
++               snd_soc_component_update_bits(component, comp1_ctl3, 0x80, 0x00);
+                snd_soc_component_update_bits(component, CDC_WSA_COMPANDER0_CTL7, 0x01, 0x00);
+-               snd_soc_component_update_bits(component, CDC_WSA_COMPANDER1_CTL7, 0x01, 0x00);
++               snd_soc_component_update_bits(component, comp1_ctl7, 0x01, 0x00);
+                snd_soc_component_update_bits(component, CDC_WSA_BOOST0_BOOST_CTL, 0x7C, 0x44);
+                snd_soc_component_update_bits(component, CDC_WSA_BOOST1_BOOST_CTL, 0x7C, 0x44);
+                break;
+        default:
+                snd_soc_component_update_bits(component, CDC_WSA_COMPANDER0_CTL3, 0x80, 0x80);
+-               snd_soc_component_update_bits(component, CDC_WSA_COMPANDER1_CTL3, 0x80, 0x80);
++               snd_soc_component_update_bits(component, comp1_ctl3, 0x80, 0x80);
+                snd_soc_component_update_bits(component, CDC_WSA_COMPANDER0_CTL7, 0x01, 0x01);
+-               snd_soc_component_update_bits(component, CDC_WSA_COMPANDER1_CTL7, 0x01, 0x01);
++               snd_soc_component_update_bits(component, comp1_ctl7, 0x01, 0x01);
+                snd_soc_component_update_bits(component, CDC_WSA_BOOST0_BOOST_CTL, 0x7C, 0x58);
+                snd_soc_component_update_bits(component, CDC_WSA_BOOST1_BOOST_CTL, 0x7C, 0x58);
+                break;

@@ -1,0 +1,16 @@
+pre_pkg_preinst() {
+    mkdir -p "${ED}/usr/share/alsa/ucm2/Qualcomm/glymur"
+    mkdir -p "${ED}/usr/share/alsa/ucm2/conf.d/glymur"
+
+    cp \
+        /etc/alsa/ucm2-local/Qualcomm/glymur/GLYMUR-ASUS-Zenbook-A16-UX3607OA.conf \
+        "${ED}/usr/share/alsa/ucm2/Qualcomm/glymur/"
+
+    cp \
+        /etc/alsa/ucm2-local/Qualcomm/glymur/ASUS-Zenbook-A16-HiFi.conf \
+        "${ED}/usr/share/alsa/ucm2/Qualcomm/glymur/"
+
+    ln -snf \
+        ../../Qualcomm/glymur/GLYMUR-ASUS-Zenbook-A16-UX3607OA.conf \
+        "${ED}/usr/share/alsa/ucm2/conf.d/glymur/ASUSTeKCOMPUTERINC.-ZenbookA16UX3607OA-1.0-UX3607OA.conf"
+}
