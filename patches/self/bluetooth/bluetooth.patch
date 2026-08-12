@@ -1,0 +1,159 @@
+commit 87787b28a4f54a25a0dcd8d69a1c2914c10a4138
+Author:Tom <tom@localhost>
+Date:   Sat Aug 8 18:14:10 2026 +0200
+
+    Working bluetooth
+
+diff --git a/drivers/bluetooth/hci_qca.c b/drivers/bluetooth/hci_qca.c
+index 8f9203bfa27e..26de68a9bb66 100644
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -2484,12 +2484,20 @@ static int qca_serdev_probe(struct serdev_device *serdev)
+ 			 * through the power sequence. In such cases, fall through
+ 			 * to follow the legacy flow.
+ 			 */
+-			if (IS_ERR(qcadev->bt_power->pwrseq))
++			if (IS_ERR(qcadev->bt_power->pwrseq)) {
++				err = PTR_ERR(qcadev->bt_power->pwrseq);
++
++				dev_err(&serdev->dev,
++					"failed to get bluetooth pwrseq: %d\n",
++					err);
++
+ 				qcadev->bt_power->pwrseq = NULL;
+-			else
++			} else {
++				dev_err(&serdev->dev,
++					"acquired bluetooth pwrseq\n");
+ 				break;
++			}
+ 		}
+-
+ 		qcadev->bt_power->dev = &serdev->dev;
+ 		err = qca_init_regulators(qcadev->bt_power, data->vregs,
+ 					  data->num_vregs);
+diff --git a/drivers/power/sequencing/pwrseq-pcie-m2.c b/drivers/power/sequencing/pwrseq-pcie-m2.c
+index cf51122d54fd..86898eef93f2 100644
+--- a/drivers/power/sequencing/pwrseq-pcie-m2.c
++++ b/drivers/power/sequencing/pwrseq-pcie-m2.c
+@@ -73,14 +73,30 @@ static int pwrseq_pci_m2_e_uart_enable(struct pwrseq_device *pwrseq)
+ {
+ 	struct pwrseq_pcie_m2_ctx *ctx = pwrseq_device_get_drvdata(pwrseq);
+ 
+-	return gpiod_set_value_cansleep(ctx->w_disable2_gpio, 0);
++	
++	dev_err(ctx->dev, "UART ENABLE before: logical=%d raw=%d\n",
++		gpiod_get_value_cansleep(ctx->w_disable2_gpio),
++		gpiod_get_raw_value_cansleep(ctx->w_disable2_gpio));
++	int ret = gpiod_set_value_cansleep(ctx->w_disable2_gpio, 0);
++
++	dev_err(ctx->dev, "UART ENABLE after: logical=%d raw=%d\n",
++		gpiod_get_value_cansleep(ctx->w_disable2_gpio),
++		gpiod_get_raw_value_cansleep(ctx->w_disable2_gpio));
++
++		return ret;
+ }
+ 
+ static int pwrseq_pci_m2_e_uart_disable(struct pwrseq_device *pwrseq)
+ {
+ 	struct pwrseq_pcie_m2_ctx *ctx = pwrseq_device_get_drvdata(pwrseq);
+-
+-	return gpiod_set_value_cansleep(ctx->w_disable2_gpio, 1);
++	dev_err(ctx->dev, "UART DISABLE before: logical=%d raw=%d\n",
++		gpiod_get_value_cansleep(ctx->w_disable2_gpio),
++		gpiod_get_raw_value_cansleep(ctx->w_disable2_gpio));
++	int  ret= gpiod_set_value_cansleep(ctx->w_disable2_gpio, 1);
++	dev_err(ctx->dev, "UART DISABLE after: logical=%d raw=%d\n",
++		gpiod_get_value_cansleep(ctx->w_disable2_gpio),
++		gpiod_get_raw_value_cansleep(ctx->w_disable2_gpio));
++	return ret;
+ }
+ 
+ static const struct pwrseq_unit_data pwrseq_pcie_m2_e_uart_unit_data = {
+@@ -93,15 +109,30 @@ static const struct pwrseq_unit_data pwrseq_pcie_m2_e_uart_unit_data = {
+ static int pwrseq_pci_m2_e_pcie_enable(struct pwrseq_device *pwrseq)
+ {
+ 	struct pwrseq_pcie_m2_ctx *ctx = pwrseq_device_get_drvdata(pwrseq);
+-
+-	return gpiod_set_value_cansleep(ctx->w_disable1_gpio, 0);
++	dev_err(ctx->dev, "PCIe ENABLE before: logical=%d raw=%d\n",
++		gpiod_get_value_cansleep(ctx->w_disable1_gpio),
++		gpiod_get_raw_value_cansleep(ctx->w_disable1_gpio));
++
++	int ret = gpiod_set_value_cansleep(ctx->w_disable1_gpio, 0);
++	dev_err(ctx->dev, "PCIe AFTER before: logical=%d raw=%d\n",
++		gpiod_get_value_cansleep(ctx->w_disable1_gpio),
++		gpiod_get_raw_value_cansleep(ctx->w_disable1_gpio));
++	return ret;
+ }
+ 
+ static int pwrseq_pci_m2_e_pcie_disable(struct pwrseq_device *pwrseq)
+ {
+ 	struct pwrseq_pcie_m2_ctx *ctx = pwrseq_device_get_drvdata(pwrseq);
+ 
+-	return gpiod_set_value_cansleep(ctx->w_disable1_gpio, 1);
++	dev_err(ctx->dev, "UART DISABLE before: logical=%d raw=%d\n",
++		gpiod_get_value_cansleep(ctx->w_disable1_gpio),
++		gpiod_get_raw_value_cansleep(ctx->w_disable1_gpio));
++
++	int ret = gpiod_set_value_cansleep(ctx->w_disable1_gpio, 1);
++	dev_err(ctx->dev, "PCIe DISABLE after: logical=%d raw=%d\n",
++		gpiod_get_value_cansleep(ctx->w_disable1_gpio),
++		gpiod_get_raw_value_cansleep(ctx->w_disable1_gpio));
++	return ret;
+ }
+ 
+ static const struct pwrseq_unit_data pwrseq_pcie_m2_e_pcie_unit_data = {
+@@ -129,7 +160,7 @@ static int pwrseq_pcie_m2_e_pwup_delay(struct pwrseq_device *pwrseq)
+ }
+ 
+ static const struct pwrseq_target_data pwrseq_pcie_m2_e_uart_target_data = {
+-	.name = "uart",
++	.name = "bluetooth",
+ 	.unit = &pwrseq_pcie_m2_e_uart_unit_data,
+ 	.post_enable = pwrseq_pcie_m2_e_pwup_delay,
+ };
+@@ -165,25 +196,35 @@ static const struct pwrseq_pcie_m2_pdata pwrseq_pcie_m2_m_of_data = {
+ };
+ 
+ static int pwrseq_pcie_m2_match(struct pwrseq_device *pwrseq,
+-				 struct device *dev)
++			       struct device *dev)
+ {
+ 	struct pwrseq_pcie_m2_ctx *ctx = pwrseq_device_get_drvdata(pwrseq);
+ 	struct device_node *endpoint __free(device_node) = NULL;
++	struct device_node *consumer = dev_of_node(dev);
++
++	dev_err(ctx->dev,
++		"pwrseq match: consumer=%s consumer_of=%pOF\n",
++		dev_name(dev), consumer);
+ 
+-	/*
+-	 * Traverse the 'remote-endpoint' nodes and check if the remote node's
+-	 * parent matches the OF node of 'dev'.
+-	 */
+ 	for_each_endpoint_of_node(ctx->of_node, endpoint) {
+ 		struct device_node *remote __free(device_node) =
+-				of_graph_get_remote_port_parent(endpoint);
+-		if (remote && (remote == dev_of_node(dev)))
++			of_graph_get_remote_port_parent(endpoint);
++
++		dev_err(ctx->dev,
++			"pwrseq match: remote=%pOF consumer=%pOF\n",
++			remote, consumer);
++
++		if (!remote || !consumer)
++			continue;
++
++		if (remote == consumer || remote == consumer->parent)
+ 			return PWRSEQ_MATCH_OK;
+ 	}
+ 
++	dev_err(ctx->dev, "pwrseq no match\n");
++
+ 	return PWRSEQ_NO_MATCH;
+ }
+-
+ static const struct pci_device_id pwrseq_m2_pci_ids[] = {
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL_EXT, 0x2b43),
+ 	  .driver_data = (kernel_ulong_t)"nxp,88w8987-bt" },
