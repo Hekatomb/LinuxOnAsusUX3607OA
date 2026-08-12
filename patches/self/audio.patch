@@ -1,0 +1,118 @@
+diff --git a/drivers/soundwire/qcom.c b/drivers/soundwire/qcom.c
+index 55678a30cd4a..f01e3aa1349d 100644
+--- a/drivers/soundwire/qcom.c
++++ b/drivers/soundwire/qcom.c
+@@ -1694,6 +1694,11 @@ static int qcom_swrm_probe(struct platform_device *pdev)
+ 	pm_runtime_mark_last_busy(dev);
+ 	pm_runtime_set_active(dev);
+ 	pm_runtime_enable(dev);
++	/*
++	* Diagnostic: keep the SoundWire controller runtime-active to test
++	 * whether clock-stop/resume corrupts slave enumeration.
++	 */
++	pm_runtime_forbid(dev);
+ 
+ #ifdef CONFIG_DEBUG_FS
+ 	ctrl->debugfs = debugfs_create_dir("qualcomm-sdw", ctrl->bus.debugfs);
+diff --git a/sound/soc/codecs/lpass-wsa-macro.c b/sound/soc/codecs/lpass-wsa-macro.c
+index cfd2ac0a6cda..d5e4cf95e9fd 100644
+--- a/sound/soc/codecs/lpass-wsa-macro.c
++++ b/sound/soc/codecs/lpass-wsa-macro.c
+@@ -1129,23 +1129,30 @@ static const struct regmap_config wsa_regmap_config = {
+ int wsa_macro_set_spkr_mode(struct snd_soc_component *component, int mode)
+ {
+ 	struct wsa_macro *wsa = snd_soc_component_get_drvdata(component);
++	unsigned int comp1_ctl3;
++	unsigned int comp1_ctl7;
+ 
+ 	wsa->spkr_mode = mode;
+ 
++	comp1_ctl3 = CDC_WSA_COMPANDER0_CTL3 +
++		    wsa->reg_layout->compander1_reg_offset;
++	comp1_ctl7 = CDC_WSA_COMPANDER0_CTL7 +
++		    wsa->reg_layout->compander1_reg_offset;
++
+ 	switch (mode) {
+ 	case WSA_MACRO_SPKR_MODE_1:
+ 		snd_soc_component_update_bits(component, CDC_WSA_COMPANDER0_CTL3, 0x80, 0x00);
+-		snd_soc_component_update_bits(component, CDC_WSA_COMPANDER1_CTL3, 0x80, 0x00);
++		snd_soc_component_update_bits(component, comp1_ctl3, 0x80, 0x00);
+ 		snd_soc_component_update_bits(component, CDC_WSA_COMPANDER0_CTL7, 0x01, 0x00);
+-		snd_soc_component_update_bits(component, CDC_WSA_COMPANDER1_CTL7, 0x01, 0x00);
++		snd_soc_component_update_bits(component, comp1_ctl7, 0x01, 0x00);
+ 		snd_soc_component_update_bits(component, CDC_WSA_BOOST0_BOOST_CTL, 0x7C, 0x44);
+ 		snd_soc_component_update_bits(component, CDC_WSA_BOOST1_BOOST_CTL, 0x7C, 0x44);
+ 		break;
+ 	default:
+ 		snd_soc_component_update_bits(component, CDC_WSA_COMPANDER0_CTL3, 0x80, 0x80);
+-		snd_soc_component_update_bits(component, CDC_WSA_COMPANDER1_CTL3, 0x80, 0x80);
++		snd_soc_component_update_bits(component, comp1_ctl3, 0x80, 0x80);
+ 		snd_soc_component_update_bits(component, CDC_WSA_COMPANDER0_CTL7, 0x01, 0x01);
+-		snd_soc_component_update_bits(component, CDC_WSA_COMPANDER1_CTL7, 0x01, 0x01);
++		snd_soc_component_update_bits(component, comp1_ctl7, 0x01, 0x01);
+ 		snd_soc_component_update_bits(component, CDC_WSA_BOOST0_BOOST_CTL, 0x7C, 0x58);
+ 		snd_soc_component_update_bits(component, CDC_WSA_BOOST1_BOOST_CTL, 0x7C, 0x58);
+ 		break;
+diff --git a/sound/soc/qcom/x1e80100.c b/sound/soc/qcom/x1e80100.c
+index c81df41ace88..2d7c740a2c7e 100644
+--- a/sound/soc/qcom/x1e80100.c
++++ b/sound/soc/qcom/x1e80100.c
+@@ -79,6 +79,9 @@ static int x1e80100_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
+ 
+ 	rate->min = rate->max = 48000;
+ 	switch (cpu_dai->id) {
++	case WSA_CODEC_DMA_RX_0:
++        channels->min = channels->max = 4;
++        break;
+ 	case TX_CODEC_DMA_TX_0:
+ 	case TX_CODEC_DMA_TX_1:
+ 	case TX_CODEC_DMA_TX_2:
+@@ -130,19 +133,35 @@ static int x1e80100_snd_prepare(struct snd_pcm_substream *substream)
+ 	int ret;
+ 
+ 	switch (cpu_dai->id) {
+-	case WSA_CODEC_DMA_RX_0:
+-	case WSA_CODEC_DMA_RX_1:
+-		ret = x1e80100_snd_hw_map_channels(rx_slot, channels);
+-		if (ret)
+-			return ret;
+-
+-		ret = snd_soc_dai_set_channel_map(cpu_dai, 0, NULL,
+-						  channels, rx_slot);
+-		if (ret)
+-			return ret;
+-		break;
+-	default:
+-		break;
++		case WSA_CODEC_DMA_RX_0:
++			/*
++			* Diagnostic: the ASUS Glymur topology uses a stereo FE but
++			* requires a four-channel WSA backend.
++			*/
++			channels = 4;
++
++			ret = x1e80100_snd_hw_map_channels(rx_slot, channels);
++			if (ret)
++				return ret;
++
++			ret = snd_soc_dai_set_channel_map(cpu_dai, 0, NULL,
++							channels, rx_slot);
++			if (ret)
++				return ret;
++			break;
++
++		case WSA_CODEC_DMA_RX_1:
++			ret = x1e80100_snd_hw_map_channels(rx_slot, channels);
++			if (ret)
++				return ret;
++
++			ret = snd_soc_dai_set_channel_map(cpu_dai, 0, NULL,
++							channels, rx_slot);
++			if (ret)
++				return ret;
++			break;
++		default:
++			break;
+ 	}
+ 
+ 	return qcom_snd_sdw_prepare(substream, &data->stream_prepared[cpu_dai->id]);
