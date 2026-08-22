@@ -47,11 +47,8 @@ Apply patch from msg fc3d0dfc-20cb-4289-a0dd-67ace50d42d8 {at} oss.qualcomm.com 
 working.
 
 ## Partition
-The harddisk has ten firmware partitions followed by a EFI partition followed by Windows + Windows recovery. 
-In short on the harddisk there were 16 original partitions. 
-~~Do not touch the first ten partitions. Unknown how the machine would handle if they were modified or deleted.~~ 
-~~(todo: try to boot without the ssd, see if the machine even boots).~~
-Linux will boot without the first partitions.
+The harddisk has eleven firmware partitions followed by a EFI partition followed by Windows + Windows and Asus recovery parititons. 
+I would not touch the first eleven partitions. Unknown how the machine would handle if they were modified or deleted.
 Partition table is saved in the *info* folder.
 
 
