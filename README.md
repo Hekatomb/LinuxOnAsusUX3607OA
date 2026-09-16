@@ -13,15 +13,17 @@ Disabling Secure boot is an option in the UEFI menu. It is one of a handfull of 
 
 Boot order is *not* an option.
 
-Boot order on this  Laptop is very quirky. Not sure if Insyde, Qualcomm, or ASUS is to blame.
+Boot order on this Laptop is very quirky. Not sure if Insyde, Qualcomm, or ASUS is to blame.
 
 What I have deduced:
-1. Boot order is fixed to a specific order.
-2. The UEFI will look for known files and paths in order to figure out which system to boot.
+If you attempt to add or modify the boot order using efibootmgr then the UEFI will ignore it and rebuild the boot order at next boot.
+
+The UEFI will look for known files and paths. 
     * If it doesnt find anything it will default to EFI/BOOT/bootaa64.efi
-    * When manually entering the boot menu (Esc) and if just one of the known efi files exist, 
+    * When manually entering the boot menu (Esc) and if just one of the known EFI files exist, 
         then you will not get the option to boot from EFI/BOOT/bootaa64.efi on that device.
-3. The known paths and strings are:
+
+The known paths and strings are:
 
 |    Path                                |  Boot menu text         |      ??                 |
 | -------------------------------------- | ----------------------- | ----------------------- |
@@ -37,9 +39,23 @@ What I have deduced:
 |  \EFI\ubuntu\shim`$cpu$`.efi           |  ubuntu                 |  SECURE                 |
 
 `$cpu$`  seems to resolve to aa64.
-\EFI\ubuntu\shimaa64.efi seems to go first. If  it exists then the system will boot that by default. Tested without Secure boot.
-Windows seems to be the next. There may be an other option before Windows, but if  you want to  dual boot Windows and Linux you need to have a bootable file called `\efi\EFI\systemd\systemd-bootaa64.efi`. 
-Just copy whatever your distro uses into that path.
+\EFI\ubuntu\shimaa64.efi seems to go first. If it exists then the system will boot that by default. Tested without Secure boot. 
+Windows seems to be the next. There may be an other option before Windows, but if  you want to dual boot Windows and Linux you need to have a bootable file called `\EFI\Gentoo\grubaa64.efi`. 
+Just copy whatever your distro uses into the Ubuntu path. 
+
+If you want to add an extra option to the UEFI Boot or change the order then the only way I have found is using tianocore/EDK2 Shell. 
+Download and build their EDK2 Shell. 
+
+Boot from it (I recommend USB stick).
+
+Find your EFI partition. For me it was fs2:
+
+Command to add Grub as the first Boot option:
+``` 
+fs2:
+bcfg boot add 0 \EFI\Gentoo\grubaa64.efi "Gentoo"
+``` 
+This seems to stick across multi boots over a week.
 
 ## Kernel
 Linux-next-20260813 kinda works but screen remains black.
@@ -49,8 +65,8 @@ working.
 ## Partition
 The harddisk has eleven firmware partitions followed by a EFI partition followed by Windows + Windows and Asus recovery parititons. 
 I would not touch the first eleven partitions. Unknown how the machine would handle if they were modified or deleted.
-Partition table is saved in the *info* folder.
 
+Partition table is saved in the *info* folder.
 
 ## Firmware
 Copy the update folder into your */lib/firmware* (or your firmware search path).
@@ -59,7 +75,7 @@ Make sure the currect firmware is in /lib/firmware/ath12k/QCC2072/hw1.0.
 Get the current firmware from the Linux Firmware Project.
 
 To recreate:
-Download the current driver pack from Asus' website and extract it by running the exe (WINE...?).
+Download the current driver pack from Asus' website and extract it by running the exe by using 7-zip.
  
 Find the file *bdwlan_qcc2072_1p0_ncm820A.elf* which was in the folder: *SOCPackage..../QualcommBSP/WIFI_BT/qcwlancol8480*
 
@@ -75,8 +91,10 @@ Information about the card taken from dmesg on a running system:.
     bus=pci,vendor=17cb,device=1112,subsystem-vendor=105b,subsystem-device=e14f,qmi-chip-id=33,qmi-board-id=255,variant=UX3407Q 
     from ath12k/QCC2072/hw1.0/board-2.bin
 
-## Problems and thing that is not working
+## RTC
+A simple readonly RTC driver is located in the folder `patches/self/glymur-pmgk-rtc-oot` of this project until Linux kernel gets its own.
 
+## Problems and thing that is not working
 Oh boy. Screen not showing anything for a long time during boot. 
-Sound  is a bit  flaky. Random reboots. RTC clock not working. USB reliability problems. 
+Sound  is a bit  flaky. Random reboots. USB reliability problems. 
 Definately not fit for proper use yet, but the people at LKML are steadily improving. 
